@@ -1,0 +1,33 @@
+﻿# Секреты — никогда не в репозиторий
+.env.local
+.env.production
+*.env
+
+# Зависимости
+node_modules/
+
+# База данных (локальные данные)
+data/
+
+# Логи
+*.log
+logs/
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/build/
+android/*.keystore
+
+# OS
+.DS_Store
+Thumbs.db
