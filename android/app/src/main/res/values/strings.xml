@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Авто-помощник BY</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_garage">Гараж</string>
+    <string name="nav_fines">Штрафы</string>
+    <string name="nav_reminders">Напоминания</string>
+    <string name="nav_expenses">Расходы</string>
+    <string name="nav_sto">СТО</string>
+</resources>
