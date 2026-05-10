@@ -1,15 +1,20 @@
 package by.autohelper.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
+import by.autohelper.core.di.AppViewModel
 import by.autohelper.features.auth.ui.LoginScreen
 import by.autohelper.features.expenses.ui.ExpensesScreen
 import by.autohelper.features.fines.ui.FinesScreen
@@ -34,17 +39,26 @@ val bottomNavItems = listOf(
 )
 
 @Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
+fun AppNavigation(appViewModel: AppViewModel = hiltViewModel()) {
+    val isLoggedIn by appViewModel.isLoggedIn.collectAsState()
 
-    // Проверяем залогинен ли пользователь
-    // TODO: получать из DataStore
-    val isLoggedIn = remember { mutableStateOf(false) }
-
-    if (!isLoggedIn.value) {
-        LoginScreen(onLoginSuccess = { isLoggedIn.value = true })
-        return
+    when (isLoggedIn) {
+        null  -> SplashScreen()                // пока читаем DataStore
+        false -> LoginScreen(onLoginSuccess = { appViewModel.onLoggedIn() })
+        true  -> MainAppScaffold()
     }
+}
+
+@Composable
+private fun SplashScreen() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun MainAppScaffold() {
+    val navController = rememberNavController()
 
     Scaffold(
         bottomBar = {
