@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace         = "by.autohelper"
-    compileSdk        = 35
+    compileSdk        = 34
 
     defaultConfig {
         applicationId = "by.autohelper"
         minSdk        = 26          // Android 8.0+ — 96% устройств в РБ
-        targetSdk     = 35
+        targetSdk     = 34
         versionCode   = 1
         versionName   = "1.0.0"
 
