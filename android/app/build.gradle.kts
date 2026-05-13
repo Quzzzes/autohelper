@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace         = "by.autohelper"
-    compileSdk        = 34
+    compileSdk        = 35
 
     defaultConfig {
         applicationId = "by.autohelper"
         minSdk        = 26          // Android 8.0+ — 96% устройств в РБ
-        targetSdk     = 34
+        targetSdk     = 35
         versionCode   = 1
         versionName   = "1.0.0"
 
@@ -24,8 +24,8 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            // Для эмулятора: 10.0.2.2 = localhost хоста
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
+            // Используем внешний сервер для debug
+            buildConfigField("String", "BASE_URL", "\"http://91.149.179.69/\"")
         }
         release {
             isMinifyEnabled = true
