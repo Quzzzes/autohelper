@@ -53,8 +53,15 @@ class LoginViewModel @Inject constructor(
                 } else {
                     _state.value = _state.value.copy(error = response.error?.message ?: "Ошибка")
                 }
-            } catch (e: Exception) {
+            } catch (e: retrofit2.HttpException) {
+                val body = e.response()?.errorBody()?.string() ?: ""
+                _state.value = _state.value.copy(error = "HTTP ${e.code()}: $body")
+            } catch (e: java.net.ConnectException) {
                 _state.value = _state.value.copy(error = "Нет соединения с сервером")
+            } catch (e: java.net.SocketTimeoutException) {
+                _state.value = _state.value.copy(error = "Таймаут соединения")
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(error = "${e.javaClass.simpleName}: ${e.message}")
             } finally {
                 _state.value = _state.value.copy(isLoading = false)
             }
