@@ -23,6 +23,10 @@ class TokenStorage @Inject constructor(
         context.dataStore.data.first()[ACCESS_TOKEN]
     }
 
+    fun getRefreshToken(): String? = runBlocking {
+        context.dataStore.data.first()[REFRESH_TOKEN]
+    }
+
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         context.dataStore.edit { prefs ->
             prefs[ACCESS_TOKEN]  = accessToken

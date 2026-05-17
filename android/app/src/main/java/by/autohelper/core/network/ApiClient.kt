@@ -12,6 +12,7 @@ import javax.inject.Singleton
 @Singleton
 class ApiClient @Inject constructor(
     private val tokenStorage: TokenStorage,
+    private val tokenAuthenticator: TokenAuthenticator,
 ) {
     val retrofit: Retrofit by lazy {
         val logging = HttpLoggingInterceptor().apply {
@@ -22,6 +23,7 @@ class ApiClient @Inject constructor(
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .authenticator(tokenAuthenticator)
             .addInterceptor(logging)
             .addInterceptor { chain ->
                 // Добавляем JWT токен в каждый запрос
