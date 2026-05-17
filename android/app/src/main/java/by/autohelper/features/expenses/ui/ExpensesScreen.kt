@@ -132,6 +132,7 @@ private fun ExpenseCard(expense: Expense) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Double, Double?, String?) -> Unit) {
     val categories = CATEGORY_LABELS.keys.toList()
