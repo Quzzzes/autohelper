@@ -2,7 +2,10 @@ package by.autohelper.core.network
 
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.Route
 import org.json.JSONObject
@@ -15,17 +18,11 @@ class TokenAuthenticator @Inject constructor(
 ) : Authenticator {
 
     override fun authenticate(route: Route?, response: Response): Request? {
-        // Не пытаемся обновить токен для самого endpoint refresh/login/register
-        val url = response.request.url.toString()
-        if (url.contains("/auth/")) return null
-
-        // Защита от бесконечного цикла: если уже был один retry — выходим
+        if (response.request.url.toString().contains("/auth/")) return null
         if (responseCount(response) >= 2) return null
 
         val refreshToken = tokenStorage.getRefreshToken() ?: return null
-
-        val newTokens = runBlocking { refreshTokens(response, refreshToken) } ?: return null
-
+        val newTokens = runBlocking { refreshTokens(refreshToken) } ?: return null
         runBlocking { tokenStorage.saveTokens(newTokens.first, newTokens.second) }
 
         return response.request.newBuilder()
@@ -33,26 +30,22 @@ class TokenAuthenticator @Inject constructor(
             .build()
     }
 
-    private suspend fun refreshTokens(response: Response, refreshToken: String): Pair<String, String>? {
+    private fun refreshTokens(refreshToken: String): Pair<String, String>? {
         return try {
-            val client = response.request.tag(okhttp3.OkHttpClient::class.java)
-                ?: okhttp3.OkHttpClient()
+            val body = """{"refreshToken":"$refreshToken"}"""
+                .toRequestBody("application/json".toMediaType())
 
-            val body = okhttp3.RequestBody.create(
-                okhttp3.MediaType.parse("application/json"),
-                """{"refreshToken":"$refreshToken"}"""
-            )
-            val req = okhttp3.Request.Builder()
+            val req = Request.Builder()
                 .url("http://91.149.179.69/api/auth/refresh")
                 .post(body)
                 .build()
 
-            val resp = client.newCall(req).execute()
+            val resp = OkHttpClient().newCall(req).execute()
             if (!resp.isSuccessful) return null
 
-            val json = JSONObject(resp.body()?.string() ?: return null)
+            val json = JSONObject(resp.body?.string() ?: return null)
             val data = json.optJSONObject("data") ?: return null
-            val access  = data.optString("accessToken").takeIf { it.isNotEmpty() } ?: return null
+            val access  = data.optString("accessToken").takeIf  { it.isNotEmpty() } ?: return null
             val refresh = data.optString("refreshToken").takeIf { it.isNotEmpty() } ?: return null
             Pair(access, refresh)
         } catch (e: Exception) {
