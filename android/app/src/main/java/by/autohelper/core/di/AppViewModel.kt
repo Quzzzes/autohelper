@@ -20,7 +20,7 @@ class AppViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _isLoggedIn.value = tokenStorage.isLoggedIn()
+            _isLoggedIn.value = tokenStorage.isLoggedInAsync()
         }
     }
 

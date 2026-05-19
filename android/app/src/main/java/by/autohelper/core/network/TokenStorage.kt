@@ -39,4 +39,8 @@ class TokenStorage @Inject constructor(
     }
 
     fun isLoggedIn(): Boolean = getAccessToken() != null
+
+    // Suspend-версия для вызова из корутин (без runBlocking)
+    suspend fun isLoggedInAsync(): Boolean =
+        context.dataStore.data.first()[ACCESS_TOKEN] != null
 }
