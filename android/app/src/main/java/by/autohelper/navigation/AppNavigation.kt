@@ -19,15 +19,17 @@ import by.autohelper.features.auth.ui.LoginScreen
 import by.autohelper.features.expenses.ui.ExpensesScreen
 import by.autohelper.features.fines.ui.FinesScreen
 import by.autohelper.features.garage.ui.GarageScreen
+import by.autohelper.features.profile.ui.ProfileScreen
 import by.autohelper.features.reminders.ui.RemindersScreen
 import by.autohelper.features.sto.ui.StoScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Garage    : Screen("garage",    "Гараж",        Icons.Default.DirectionsCar)
     object Fines     : Screen("fines",     "Штрафы",       Icons.Default.Receipt)
-    object Reminders : Screen("reminders", "Напоминания",  Icons.Default.Notifications)
+    object Reminders : Screen("reminders", "Напомин.",     Icons.Default.Notifications)
     object Expenses  : Screen("expenses",  "Расходы",      Icons.Default.AccountBalanceWallet)
     object Sto       : Screen("sto",       "СТО",          Icons.Default.Build)
+    object Profile   : Screen("profile",   "Профиль",      Icons.Default.Person)
 }
 
 val bottomNavItems = listOf(
@@ -36,6 +38,7 @@ val bottomNavItems = listOf(
     Screen.Reminders,
     Screen.Expenses,
     Screen.Sto,
+    Screen.Profile,
 )
 
 @Composable
@@ -43,9 +46,9 @@ fun AppNavigation(appViewModel: AppViewModel = hiltViewModel()) {
     val isLoggedIn by appViewModel.isLoggedIn.collectAsState()
 
     when (isLoggedIn) {
-        null  -> SplashScreen()                // пока читаем DataStore
+        null  -> SplashScreen()
         false -> LoginScreen(onLoginSuccess = { appViewModel.onLoggedIn() })
-        true  -> MainAppScaffold()
+        true  -> MainAppScaffold(onLogout = { appViewModel.onLoggedOut() })
     }
 }
 
@@ -57,7 +60,7 @@ private fun SplashScreen() {
 }
 
 @Composable
-private fun MainAppScaffold() {
+private fun MainAppScaffold(onLogout: () -> Unit) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -93,6 +96,7 @@ private fun MainAppScaffold() {
             composable(Screen.Reminders.route) { RemindersScreen() }
             composable(Screen.Expenses.route)  { ExpensesScreen() }
             composable(Screen.Sto.route)       { StoScreen() }
+            composable(Screen.Profile.route)   { ProfileScreen(onLogout = onLogout) }
         }
     }
 }

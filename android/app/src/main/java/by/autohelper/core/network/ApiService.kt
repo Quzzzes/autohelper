@@ -45,4 +45,8 @@ interface ApiService {
     // ─── СТО ───────────────────────────────────────────────────
     @GET("api/sto")
     suspend fun getStoList(@Query("city") city: String? = null): ApiResponse<List<Sto>>
+
+    // ─── Auth доп. ─────────────────────────────────────────────
+    @POST("api/auth/logout")
+    suspend fun logout(): ApiResponse<Any>
 }

@@ -17,6 +17,7 @@ data class FinesState(
     val isLoading: Boolean    = false,
     val error:     String?    = null,
     val carPlate:  String?    = null,
+    val carId:     String?    = null,
 )
 
 @HiltViewModel
@@ -31,11 +32,13 @@ class FinesViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             selectedCar.selectedCar.collectLatest { car ->
-                _state.value = _state.value.copy(carPlate = car?.plate)
+                _state.value = _state.value.copy(carPlate = car?.plate, carId = car?.id)
                 if (car != null) load(car.id) else _state.value = _state.value.copy(fines = emptyList())
             }
         }
     }
+
+    fun refresh() { _state.value.carId?.let { load(it) } }
 
     fun load(carId: String) {
         viewModelScope.launch {

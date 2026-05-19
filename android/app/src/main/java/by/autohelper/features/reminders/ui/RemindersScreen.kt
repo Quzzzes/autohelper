@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,69 +28,83 @@ val REMINDER_LABELS = mapOf(
     "vu"         to "Водительское удостоверение",
 )
 
+val REMINDER_ICONS = mapOf(
+    "osgo"       to Icons.Default.Security,
+    "to"         to Icons.Default.Build,
+    "techosmotr" to Icons.Default.VerifiedUser,
+    "blue_card"  to Icons.Default.CreditCard,
+    "oil"        to Icons.Default.WaterDrop,
+    "tires"      to Icons.Default.DirectionsCar,
+    "vu"         to Icons.Default.Badge,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemindersScreen(viewModel: RemindersViewModel = hiltViewModel()) {
-    val state by viewModel.state.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    val state    by viewModel.state.collectAsState()
+    var showAdd  by remember { mutableStateOf(false) }
+    val snackbar  = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.error) {
+        state.error?.let { snackbar.showSnackbar(it) }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Напоминания", fontWeight = FontWeight.Bold) }) },
         floatingActionButton = {
             if (state.carId != null) {
-                FloatingActionButton(onClick = { showAddDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Добавить напоминание")
+                FloatingActionButton(onClick = { showAdd = true }) {
+                    Icon(Icons.Default.Add, "Добавить")
                 }
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when {
-                state.isLoading    -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                state.carId == null -> NoCarSelected()
-                state.reminders.isEmpty() -> EmptyRemindersState(onAdd = { showAddDialog = true })
-                else -> RemindersList(state.reminders, onDelete = { viewModel.deleteReminder(it) })
+        when {
+            state.carId == null -> NoCarSelectedState()
+            state.isLoading     -> Box(Modifier.fillMaxSize()) { CircularProgressIndicator(Modifier.align(Alignment.Center)) }
+            state.reminders.isEmpty() -> EmptyRemindersState(onAdd = { showAdd = true })
+            else -> LazyColumn(
+                Modifier.padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(state.reminders, key = { it.id }) { reminder ->
+                    ReminderCard(reminder = reminder, onDelete = { viewModel.deleteReminder(reminder.id) })
+                }
             }
         }
     }
 
-    if (showAddDialog) {
+    if (showAdd) {
         AddReminderDialog(
-            onDismiss = { showAddDialog = false },
-            onConfirm = { type, date ->
-                viewModel.addReminder(type, date)
-                showAddDialog = false
-            }
+            onDismiss = { showAdd = false },
+            onConfirm = { type, date -> viewModel.addReminder(type, date); showAdd = false }
         )
     }
 }
 
 @Composable
-private fun NoCarSelected() {
-    Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Icon(Icons.Default.DirectionsCar, null, Modifier.size(80.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
-        Spacer(Modifier.height(16.dp))
-        Text("Авто не выбрано", style = MaterialTheme.typography.titleLarge)
-        Text("Выберите автомобиль в разделе «Гараж»", color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun NoCarSelectedState() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.DirectionsCar, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
+            Text("Выберите автомобиль", style = MaterialTheme.typography.titleLarge)
+            Text("Перейдите в Гараж и выберите авто", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
 @Composable
 private fun EmptyRemindersState(onAdd: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Icon(Icons.Default.Notifications, null, Modifier.size(80.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
-        Spacer(Modifier.height(16.dp))
-        Text("Напоминаний нет", style = MaterialTheme.typography.titleLarge)
-        Text("Добавьте напоминание о ТО, страховке и т.д.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(24.dp))
-        Button(onClick = onAdd) { Text("Добавить") }
-    }
-}
-
-@Composable
-private fun RemindersList(reminders: List<Reminder>, onDelete: (String) -> Unit) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(reminders) { reminder -> ReminderCard(reminder, onDelete = { onDelete(reminder.id) }) }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.Notifications, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
+            Text("Напоминаний нет", style = MaterialTheme.typography.titleLarge)
+            Text("Добавьте напоминание о ТО, страховке и др.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = onAdd) { Text("Добавить") }
+        }
     }
 }
 
@@ -99,33 +114,41 @@ private fun ReminderCard(reminder: Reminder, onDelete: () -> Unit) {
     val dueDate  = runCatching { LocalDate.parse(reminder.due_date) }.getOrNull()
     val daysLeft = dueDate?.let { ChronoUnit.DAYS.between(today, it) }
 
-    val chipColor = when {
-        daysLeft == null        -> MaterialTheme.colorScheme.surfaceVariant
-        daysLeft < 0            -> MaterialTheme.colorScheme.errorContainer
-        daysLeft <= 14          -> MaterialTheme.colorScheme.tertiaryContainer
-        else                    -> MaterialTheme.colorScheme.secondaryContainer
+    val urgencyColor = when {
+        daysLeft == null       -> MaterialTheme.colorScheme.onSurfaceVariant
+        daysLeft < 0           -> Color(0xFFD32F2F)   // просрочено
+        daysLeft <= 14         -> Color(0xFFE65100)   // скоро
+        daysLeft <= 30         -> Color(0xFFF9A825)   // в этом месяце
+        else                   -> Color(0xFF388E3C)   // всё ок
     }
-    val chipText = when {
-        daysLeft == null -> "?"
-        daysLeft < 0     -> "Просрочено"
-        daysLeft == 0L   -> "Сегодня!"
-        else             -> "через $daysLeft дн."
+
+    val urgencyText = when {
+        daysLeft == null -> ""
+        daysLeft < 0    -> "Просрочено на ${-daysLeft} дн."
+        daysLeft == 0L  -> "Сегодня!"
+        daysLeft == 1L  -> "Завтра!"
+        daysLeft <= 30  -> "Через $daysLeft дн."
+        else            -> "Через $daysLeft дн."
     }
 
     Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Notifications, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                imageVector = REMINDER_ICONS[reminder.type] ?: Icons.Default.Notifications,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = urgencyColor,
+            )
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(REMINDER_LABELS[reminder.type] ?: reminder.type, fontWeight = FontWeight.Bold)
                 Text("до ${reminder.due_date}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (urgencyText.isNotEmpty()) {
+                    Text(urgencyText, style = MaterialTheme.typography.labelSmall, color = urgencyColor, fontWeight = FontWeight.Medium)
+                }
             }
-            Surface(color = chipColor, shape = MaterialTheme.shapes.small) {
-                Text(chipText, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
-            }
-            Spacer(Modifier.width(8.dp))
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Default.Delete, "Удалить", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
             }
         }
     }
@@ -134,19 +157,24 @@ private fun ReminderCard(reminder: Reminder, onDelete: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddReminderDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
-    val types = REMINDER_LABELS.keys.toList()
-    var selectedType by remember { mutableStateOf("techosmotr") }
-    var dateText     by remember { mutableStateOf(LocalDate.now().plusMonths(1).toString()) }
-    var expanded     by remember { mutableStateOf(false) }
+    val types    = REMINDER_LABELS.keys.toList()
+    var selType  by remember { mutableStateOf(types.first()) }
+    var expanded by remember { mutableStateOf(false) }
+
+    // Дата — простой ввод YYYY-MM-DD
+    val nextYear = LocalDate.now().plusMonths(11).format(DateTimeFormatter.ISO_LOCAL_DATE)
+    var dateText by remember { mutableStateOf(nextYear) }
+    var dateError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Добавить напоминание") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Тип
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
-                        value         = REMINDER_LABELS[selectedType] ?: selectedType,
+                        value         = REMINDER_LABELS[selType] ?: selType,
                         onValueChange = {},
                         readOnly      = true,
                         label         = { Text("Тип") },
@@ -154,29 +182,30 @@ private fun AddReminderDialog(onDismiss: () -> Unit, onConfirm: (String, String)
                         modifier      = Modifier.fillMaxWidth().menuAnchor(),
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        types.forEach { type ->
-                            DropdownMenuItem(
-                                text    = { Text(REMINDER_LABELS[type] ?: type) },
-                                onClick = { selectedType = type; expanded = false }
-                            )
+                        types.forEach { t ->
+                            DropdownMenuItem(text = { Text(REMINDER_LABELS[t] ?: t) }, onClick = { selType = t; expanded = false })
                         }
                     }
                 }
+                // Дата
                 OutlinedTextField(
                     value         = dateText,
-                    onValueChange = { dateText = it },
+                    onValueChange = { dateText = it; dateError = false },
                     label         = { Text("Дата (ГГГГ-ММ-ДД)") },
+                    isError       = dateError,
+                    supportingText = if (dateError) {{ Text("Формат: 2025-12-31") }} else null,
                     modifier      = Modifier.fillMaxWidth(),
                     singleLine    = true,
-                    placeholder   = { Text("2025-12-31") },
+                    leadingIcon   = { Icon(Icons.Default.CalendarMonth, null) },
                 )
             }
         },
         confirmButton = {
-            Button(
-                onClick = { onConfirm(selectedType, dateText) },
-                enabled = dateText.matches(Regex("\\d{4}-\\d{2}-\\d{2}")),
-            ) { Text("Добавить") }
+            Button(onClick = {
+                val parsed = runCatching { LocalDate.parse(dateText) }.getOrNull()
+                if (parsed == null) { dateError = true; return@Button }
+                onConfirm(selType, dateText)
+            }) { Text("Добавить") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
     )
