@@ -14,13 +14,19 @@ class AppViewModel @Inject constructor(
     private val tokenStorage: TokenStorage,
 ) : ViewModel() {
 
-    // null = ещё определяем (сплэш), false = не залогинен, true = залогинен
+    // null = сплэш, false = логин, true = главный экран
     private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
     val isLoggedIn = _isLoggedIn.asStateFlow()
 
     init {
+        // Подписываемся на Flow — DataStore сам уведомит когда данные будут готовы
         viewModelScope.launch {
-            _isLoggedIn.value = tokenStorage.isLoggedInAsync()
+            tokenStorage.isLoggedInFlow.collect { loggedIn ->
+                // Обновляем только если ещё на сплэше, или меняем состояние
+                if (_isLoggedIn.value == null || _isLoggedIn.value == true) {
+                    _isLoggedIn.value = loggedIn
+                }
+            }
         }
     }
 
