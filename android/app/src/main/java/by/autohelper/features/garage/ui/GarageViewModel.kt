@@ -6,6 +6,7 @@ import by.autohelper.core.data.SelectedCarRepository
 import by.autohelper.core.network.AddCarRequest
 import by.autohelper.core.network.ApiService
 import by.autohelper.core.network.Car
+import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +45,9 @@ class GarageViewModel @Inject constructor(
                     selected?.let { selectedCarRepo.select(it) }
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(error = "Ошибка загрузки")
+                val msg = "${e.javaClass.simpleName}: ${e.message}"
+                Log.e("GarageVM", "loadCars failed", e)
+                _state.value = _state.value.copy(error = msg)
             } finally {
                 _state.value = _state.value.copy(isLoading = false)
             }
